@@ -247,6 +247,42 @@
     .fc-event-title {
       display: none;
     }
+    .export-buttons button {
+      flex: 1;
+      font-size: 0.9rem;
+      padding: 0.5em;
+    }
+
+    .backup {
+      background: #f8fff8;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin: 1.5rem 0;
+      padding: 1rem;
+    }
+
+    .backup h2 {
+      margin-top: 0;
+      color: var(--main-green);
+      font-size: 1.2rem;
+    }
+
+    .backup-info {
+      margin-bottom: 1rem;
+      color: #666;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .backup-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .backup-actions button {
+      flex: 1;
+      font-size: 0.95rem;
+    }
     @media (max-width: 600px) {
       .container {
         padding: 0.5rem;
@@ -366,6 +402,17 @@
       </div>
       <div class="export-buttons">
         <button onclick="exportPDF()">PDF Export</button>
+      </div>
+    </section>
+
+    <section class="backup">
+      <h2>Backup</h2>
+      <div class="backup-info">
+        <p>Automatische Backups werden alle 15 Tage erstellt und im iPhone-Speicher gespeichert. Die letzten 4 Backups werden aufbewahrt.</p>
+      </div>
+      <div class="backup-actions">
+        <button onclick="exportData()">Backup erstellen</button>
+        <button onclick="showAvailableBackups()">Backup wiederherstellen</button>
       </div>
     </section>
   </div>
@@ -974,6 +1021,7 @@
     function setupAutomaticBackup() {
       // Backup zweimal pro Monat (alle 15 Tage)
       const BACKUP_INTERVAL = 15 * 24 * 60 * 60 * 1000; // 15 Tage in Millisekunden
+      const CLOUD_REMINDER_INTERVAL = 30 * 24 * 60 * 60 * 1000; // 30 Tage in Millisekunden
       
       function createBackup() {
         const data = {
@@ -1020,12 +1068,53 @@
         `;
         document.body.appendChild(reminder);
       }
+
+      // Funktion für Cloud-Backup Erinnerung
+      function showCloudBackupReminder() {
+        const lastReminder = localStorage.getItem('lastCloudReminder');
+        const now = new Date().getTime();
+        
+        if (!lastReminder || (now - parseInt(lastReminder)) >= CLOUD_REMINDER_INTERVAL) {
+          const reminder = document.createElement('div');
+          reminder.style.position = 'fixed';
+          reminder.style.bottom = '20px';
+          reminder.style.left = '50%';
+          reminder.style.transform = 'translateX(-50%)';
+          reminder.style.backgroundColor = '#1976d2';
+          reminder.style.color = 'white';
+          reminder.style.padding = '15px 20px';
+          reminder.style.borderRadius = '8px';
+          reminder.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+          reminder.style.zIndex = '1000';
+          reminder.style.textAlign = 'center';
+          reminder.style.maxWidth = '90%';
+          reminder.style.width = '400px';
+          reminder.innerHTML = `
+            <div style="margin-bottom: 10px; font-weight: bold;">Cloud-Backup Erinnerung</div>
+            <div style="font-size: 0.9em;">Bitte führen Sie ein Backup in die Cloud durch und exportieren Sie die Daten.</div>
+            <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: center;">
+              <button onclick="exportData(); this.parentElement.parentElement.remove()" style="padding: 5px 15px; background: white; color: #1976d2; border: none; border-radius: 4px; cursor: pointer;">Jetzt exportieren</button>
+              <button onclick="this.parentElement.parentElement.remove()" style="padding: 5px 15px; background: white; color: #1976d2; border: none; border-radius: 4px; cursor: pointer;">Später</button>
+            </div>
+          `;
+          document.body.appendChild(reminder);
+          
+          // Speichere Zeitpunkt der Erinnerung
+          localStorage.setItem('lastCloudReminder', now.toString());
+        }
+      }
       
       // Erstelle sofort ein Backup beim Start
       createBackup();
       
       // Setze Intervall für regelmäßige Backups
       setInterval(createBackup, BACKUP_INTERVAL);
+      
+      // Zeige Cloud-Backup Erinnerung beim Start, wenn nötig
+      showCloudBackupReminder();
+      
+      // Setze Intervall für Cloud-Backup Erinnerung
+      setInterval(showCloudBackupReminder, CLOUD_REMINDER_INTERVAL);
     }
 
     // Funktion zum Wiederherstellen eines Backups
