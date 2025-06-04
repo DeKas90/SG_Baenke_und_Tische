@@ -401,7 +401,6 @@
       <div class="cloud-buttons">
         <button onclick="exportData()">Daten exportieren</button>
         <button onclick="importData()">Daten importieren</button>
-        <button onclick="showAvailableBackups()">Backup wiederherstellen</button>
       </div>
       <div class="export-buttons">
         <button onclick="exportPDF()">PDF Export</button>
@@ -1099,7 +1098,7 @@
           reminder.style.width = '400px';
           reminder.innerHTML = `
             <div style="margin-bottom: 10px; font-weight: bold;">Cloud-Backup Erinnerung</div>
-            <div style="font-size: 0.9em;">Bitte führen Sie ein Backup in die Cloud durch und exportieren Sie die Daten.</div>
+            <div style="font-size: 0.9em;">Bitte kopieren Sie das Backup von Ihrem iPhone in den iCloud Drive.</div>
             <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: center;">
               <button onclick="exportData(); this.parentElement.parentElement.remove()" style="padding: 5px 15px; background: white; color: #1976d2; border: none; border-radius: 4px; cursor: pointer;">Jetzt exportieren</button>
               <button onclick="this.parentElement.parentElement.remove()" style="padding: 5px 15px; background: white; color: #1976d2; border: none; border-radius: 4px; cursor: pointer;">Später</button>
