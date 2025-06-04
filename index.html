@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <title>Bänke & Tische Verleih</title>
   
   <!-- jsPDF Bibliothek -->
@@ -370,8 +371,6 @@
   </div>
 
   <script>
-
-
     // Offline-Status prüfen
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
