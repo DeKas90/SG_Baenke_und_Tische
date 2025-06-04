@@ -9,8 +9,8 @@
   <title>Bänke & Tische Verleih</title>
   
   <!-- jsPDF Bibliothek -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" integrity="sha512-6hplzURt13nBTeR3b/1n13nv9c/mSYZ4/EgU8kXcQOeKcAM0fzQis0KsTfsX0t3cjs2xeaiL6llT44yblmu41Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
   <style>
     :root {
@@ -371,6 +371,12 @@
   </div>
 
   <script>
+    // Warte auf vollständiges Laden der Seite
+    window.addEventListener('load', function() {
+      console.log('Seite vollständig geladen');
+      initializeApp();
+    });
+
     // Offline-Status prüfen
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
@@ -799,6 +805,9 @@
       doc.text(`Name: ${buchung.name}`, 14, 60);
       doc.text(`Telefon: ${buchung.telefon}`, 14, 67);
       doc.text(`Zeitraum: ${formatDate(buchung.start)} bis ${formatDate(buchung.end)}`, 14, 74);
+      if (buchung.rueckgabetermin) {
+        doc.text(`Vereinbarter Rückgabetermin: ${formatDate(buchung.rueckgabetermin)}`, 14, 81);
+      }
 
       // Artikel-Tabelle
       const tableData = buchung.artikel.map(a => [a.artikel, a.anzahl]);
@@ -806,7 +815,7 @@
       doc.autoTable({
         head: [['Artikel', 'Anzahl']],
         body: tableData,
-        startY: 85,
+        startY: buchung.rueckgabetermin ? 90 : 85,
         theme: 'grid',
         headStyles: {
           fillColor: [46, 125, 50],
@@ -823,7 +832,7 @@
       });
 
       // Speichern
-      const filename = `buchung-${buchung.name}-${buchung.start}.pdf`;
+      const filename = `buchung-${buchung.name}-${formatDate(buchung.start)}.pdf`;
       doc.save(filename);
     }
 
@@ -959,9 +968,6 @@
         console.error('Fehler bei der Initialisierung:', error);
       }
     }
-
-    // Starte die App
-    document.addEventListener('DOMContentLoaded', initializeApp);
   </script>
 </body>
 </html> 
