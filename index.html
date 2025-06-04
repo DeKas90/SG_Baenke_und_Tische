@@ -361,6 +361,9 @@
       <label>Vereinbarter Rückgabetermin (optional)
         <input type="date" name="rueckgabetermin" />
       </label>
+      <label>Vereinbarter Abholtermin (optional)
+        <input type="date" name="abholtermin" />
+      </label>
       
       <h3 style="margin: 1rem 0 0.5rem 0; color: var(--main-green);">Gewünschte Artikel</h3>
       <table class="artikel-tabelle">
@@ -706,7 +709,8 @@
         telefon: this.telefon.value.trim(),
         start: this.start.value,
         end: this.end.value,
-        rueckgabetermin: this.rueckgabetermin.value || null
+        rueckgabetermin: this.rueckgabetermin.value || null,
+        abholtermin: this.abholtermin.value || null
       };
 
       // Validierung
@@ -752,6 +756,7 @@
         start: formData.start,
         end: formData.end,
         rueckgabetermin: formData.rueckgabetermin,
+        abholtermin: formData.abholtermin,
         artikel: artikelMengen,
         erledigt: false
       };
@@ -855,6 +860,9 @@
       if (buchung.rueckgabetermin) {
         doc.text(`Vereinbarter Rückgabetermin: ${formatDate(buchung.rueckgabetermin)}`, 14, 81);
       }
+      if (buchung.abholtermin) {
+        doc.text(`Vereinbarter Abholtermin: ${formatDate(buchung.abholtermin)}`, 14, buchung.rueckgabetermin ? 88 : 81);
+      }
 
       // Artikel-Tabelle
       const tableData = buchung.artikel.map(a => [a.artikel, a.anzahl]);
@@ -862,7 +870,7 @@
       doc.autoTable({
         head: [['Artikel', 'Anzahl']],
         body: tableData,
-        startY: buchung.rueckgabetermin ? 90 : 85,
+        startY: buchung.rueckgabetermin || buchung.abholtermin ? 95 : 85,
         theme: 'grid',
         headStyles: {
           fillColor: [46, 125, 50],
