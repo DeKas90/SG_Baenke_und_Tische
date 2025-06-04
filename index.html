@@ -362,10 +362,10 @@
       <div class="cloud-buttons">
         <button onclick="exportData()">Daten exportieren</button>
         <button onclick="importData()">Daten importieren</button>
+        <button onclick="showAvailableBackups()">Backup wiederherstellen</button>
       </div>
       <div class="export-buttons">
         <button onclick="exportPDF()">PDF Export</button>
-        <button onclick="exportPDFAktuell()" class="secondary">PDF (nur aktuelle)</button>
       </div>
     </section>
   </div>
@@ -964,8 +964,115 @@
         renderInventar();
         renderBuchungen();
         setupDateListeners();
+        setupAutomaticBackup();
       } catch (error) {
         console.error('Fehler bei der Initialisierung:', error);
+      }
+    }
+
+    // Automatisches Backup
+    function setupAutomaticBackup() {
+      // Backup zweimal pro Monat (alle 15 Tage)
+      const BACKUP_INTERVAL = 15 * 24 * 60 * 60 * 1000; // 15 Tage in Millisekunden
+      
+      function createBackup() {
+        const data = {
+          buchungen: getBuchungen(),
+          inventar: INVENTAR,
+          backupDatum: new Date().toISOString()
+        };
+        
+        // Speichere Backup in localStorage mit Zeitstempel
+        const backupKey = `backup_${new Date().toISOString().slice(0,10)}`;
+        localStorage.setItem(backupKey, JSON.stringify(data));
+        
+        // Lösche alte Backups (behalte nur die letzten 4 Wochen)
+        const backupKeys = Object.keys(localStorage)
+          .filter(key => key.startsWith('backup_'))
+          .sort()
+          .reverse();
+        
+        if (backupKeys.length > 4) {
+          backupKeys.slice(4).forEach(key => localStorage.removeItem(key));
+        }
+        
+        console.log('Wöchentliches Backup erstellt:', backupKey);
+        
+        // Zeige Erinnerung für externe Sicherung
+        const reminder = document.createElement('div');
+        reminder.style.position = 'fixed';
+        reminder.style.bottom = '20px';
+        reminder.style.left = '50%';
+        reminder.style.transform = 'translateX(-50%)';
+        reminder.style.backgroundColor = '#2e7d32';
+        reminder.style.color = 'white';
+        reminder.style.padding = '15px 20px';
+        reminder.style.borderRadius = '8px';
+        reminder.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+        reminder.style.zIndex = '1000';
+        reminder.style.textAlign = 'center';
+        reminder.style.maxWidth = '90%';
+        reminder.style.width = '400px';
+        reminder.innerHTML = `
+          <div style="margin-bottom: 10px; font-weight: bold;">Backup erstellt!</div>
+          <div style="font-size: 0.9em;">Bitte sichern Sie das Backup auf einem externen Speichermedium.</div>
+          <button onclick="this.parentElement.remove()" style="margin-top: 10px; padding: 5px 15px; background: white; color: #2e7d32; border: none; border-radius: 4px; cursor: pointer;">Verstanden</button>
+        `;
+        document.body.appendChild(reminder);
+      }
+      
+      // Erstelle sofort ein Backup beim Start
+      createBackup();
+      
+      // Setze Intervall für regelmäßige Backups
+      setInterval(createBackup, BACKUP_INTERVAL);
+    }
+
+    // Funktion zum Wiederherstellen eines Backups
+    function restoreBackup(backupKey) {
+      const backupData = localStorage.getItem(backupKey);
+      if (backupData) {
+        try {
+          const data = JSON.parse(backupData);
+          if (data.buchungen) {
+            saveBuchungen(data.buchungen);
+            renderBuchungen();
+            alert('Backup erfolgreich wiederhergestellt!');
+          }
+        } catch (error) {
+          alert('Fehler beim Wiederherstellen des Backups!');
+        }
+      }
+    }
+
+    // Funktion zum Anzeigen verfügbarer Backups
+    function showAvailableBackups() {
+      const backupKeys = Object.keys(localStorage)
+        .filter(key => key.startsWith('backup_'))
+        .sort()
+        .reverse();
+      
+      if (backupKeys.length === 0) {
+        alert('Keine Backups verfügbar!');
+        return;
+      }
+      
+      const backupList = backupKeys.map(key => {
+        const date = key.replace('backup_', '');
+        return `${date}`;
+      }).join('\n');
+      
+      const selectedDate = prompt('Verfügbare Backups:\n' + backupList + '\n\nBitte geben Sie das Datum des gewünschten Backups ein (YYYY-MM-DD):');
+      
+      if (selectedDate) {
+        const backupKey = `backup_${selectedDate}`;
+        if (backupKeys.includes(backupKey)) {
+          if (confirm('Möchten Sie dieses Backup wirklich wiederherstellen?')) {
+            restoreBackup(backupKey);
+          }
+        } else {
+          alert('Ungültiges Backup-Datum!');
+        }
       }
     }
   </script>
