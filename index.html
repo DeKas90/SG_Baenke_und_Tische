@@ -472,6 +472,10 @@
     };
 
     // Hilfsfunktionen
+    function isValidDateString(str) {
+      return /^\d{4}-\d{2}-\d{2}$/.test(str);
+    }
+
     function getBuchungen() {
       const buchungen = JSON.parse(localStorage.getItem('buchungen') || '[]');
       return buchungen.map(b => ({
@@ -595,8 +599,12 @@
         endInput.addEventListener('change', function() {
           const start = startInput.value;
           const end = endInput.value;
-          // Nur prüfen, wenn beide Felder ausgefüllt sind und end < start (String-Vergleich für YYYY-MM-DD)
-          if (start && end && end < start) {
+          // Nur prüfen, wenn beide Felder im Format YYYY-MM-DD sind und end < start
+          if (
+            start && end &&
+            isValidDateString(start) && isValidDateString(end) &&
+            end < start
+          ) {
             alert('Das Enddatum muss nach dem Startdatum liegen!');
             this.value = '';
             updateArtikelTabelle();
