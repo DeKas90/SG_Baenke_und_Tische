@@ -582,22 +582,30 @@
 
     // Event-Listener für Datum-Änderungen
     function setupDateListeners() {
-      const dateInputs = document.querySelectorAll('#buchung-form input[type="date"]');
-      dateInputs.forEach(input => {
-        input.addEventListener('change', function() {
-          const start = document.querySelector('#buchung-form input[name="start"]').value;
-          const end = document.querySelector('#buchung-form input[name="end"]').value;
-          
+      const startInput = document.querySelector('#buchung-form input[name="start"]');
+      const endInput = document.querySelector('#buchung-form input[name="end"]');
+
+      if (startInput) {
+        startInput.addEventListener('change', function() {
+          // Nur Tabelle aktualisieren, keine Fehlermeldung anzeigen
+          updateArtikelTabelle();
+        });
+      }
+      if (endInput) {
+        endInput.addEventListener('change', function() {
+          const start = startInput.value;
+          const end = endInput.value;
           if (start && end) {
             if (new Date(end) < new Date(start)) {
               alert('Das Enddatum muss nach dem Startdatum liegen!');
               this.value = '';
+              updateArtikelTabelle();
               return;
             }
           }
           updateArtikelTabelle();
         });
-      });
+      }
     }
 
     // Buchungen anzeigen
