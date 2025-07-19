@@ -597,19 +597,6 @@
       }
       if (endInput) {
         endInput.addEventListener('change', function() {
-          const start = startInput.value;
-          const end = endInput.value;
-          // Nur prüfen, wenn beide Felder im Format YYYY-MM-DD sind und end < start
-          if (
-            start && end &&
-            isValidDateString(start) && isValidDateString(end) &&
-            end < start
-          ) {
-            alert('Das Enddatum muss nach dem Startdatum liegen!');
-            this.value = '';
-            updateArtikelTabelle();
-            return;
-          }
           updateArtikelTabelle();
         });
       }
