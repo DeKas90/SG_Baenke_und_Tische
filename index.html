@@ -214,6 +214,14 @@
       background: #ffebee;
       color: #c62828;
     }
+    .status-zurueckgegeben {
+      background: #fff3e0;
+      color: #ef6c00;
+    }
+    .status-abgeschlossen {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
     .tabs {
       display: flex;
       gap: 0.5rem;
@@ -385,16 +393,22 @@
     <section class="buchungen">
       <h2>Buchungen</h2>
       <div class="tabs">
-        <button class="tab-button active" onclick="showTab('active')">Offene Buchungen</button>
-        <button class="tab-button" onclick="showTab('completed')">Erledigte Buchungen</button>
+        <button class="tab-button active" onclick="showTab('offen')">Offen</button>
+        <button class="tab-button" onclick="showTab('zurueckgegeben')">Zurückgegeben</button>
+        <button class="tab-button" onclick="showTab('abgeschlossen')">Abgeschlossen</button>
       </div>
-      <div id="active-bookings" class="tab-content active">
-        <ul class="buchungen-list" id="buchungen-list">
+      <div id="offen-bookings" class="tab-content active">
+        <ul class="buchungen-list" id="buchungen-offen-list">
           <!-- Dynamisch gefüllt -->
         </ul>
       </div>
-      <div id="completed-bookings" class="tab-content">
-        <ul class="buchungen-list" id="completed-buchungen-list">
+      <div id="zurueckgegeben-bookings" class="tab-content">
+        <ul class="buchungen-list" id="buchungen-zurueckgegeben-list">
+          <!-- Dynamisch gefüllt -->
+        </ul>
+      </div>
+      <div id="abgeschlossen-bookings" class="tab-content">
+        <ul class="buchungen-list" id="buchungen-abgeschlossen-list">
           <!-- Dynamisch gefüllt -->
         </ul>
       </div>
@@ -482,7 +496,8 @@
         ...b,
         artikel: Array.isArray(b.artikel) ? b.artikel : [],
         erledigt: b.erledigt || false,
-        rueckgabetermin: b.rueckgabetermin || null
+        rueckgabetermin: b.rueckgabetermin || null,
+        status: b.status || (b.erledigt ? 'abgeschlossen' : 'offen') // Migration für bestehende Buchungen
       }));
     }
 
@@ -495,8 +510,10 @@
     }
 
     // Verfügbare Anzahl für einen Zeitraum berechnen
+    // Nur Buchungen mit Status 'offen' beeinflussen die Verfügbarkeit
+    // 'zurueckgegeben' und 'abgeschlossen' haben keine Auswirkung
     function getVerfuegbar(artikel, start, end, excludeId = null) {
-      const buchungen = getBuchungen().filter(b => !b.erledigt && b.status !== 'storniert');
+      const buchungen = getBuchungen().filter(b => b.status === 'offen' || (!b.status && !b.erledigt));
       let reserviert = 0;
       
       for (const b of buchungen) {
@@ -604,36 +621,52 @@
 
     // Buchungen anzeigen
     function renderBuchungen() {
-      const activeBuchungen = getBuchungen().filter(b => !b.erledigt && b.status !== 'storniert');
-      const completedBuchungen = getBuchungen().filter(b => b.erledigt || b.status === 'storniert');
+      const buchungen = getBuchungen();
       
-      // Aktive Buchungen
-      const activeList = document.getElementById('buchungen-list');
-      activeList.innerHTML = '';
-      if (activeBuchungen.length === 0) {
-        activeList.innerHTML = '<li style="color:#888">Keine offenen Buchungen</li>';
+      // Buchungen nach Status filtern
+      const offenBuchungen = buchungen.filter(b => b.status === 'offen' || (!b.status && !b.erledigt));
+      const zurueckgegebenBuchungen = buchungen.filter(b => b.status === 'zurueckgegeben');
+      const abgeschlossenBuchungen = buchungen.filter(b => b.status === 'abgeschlossen' || b.status === 'storniert');
+      
+      // Offene Buchungen
+      const offenList = document.getElementById('buchungen-offen-list');
+      offenList.innerHTML = '';
+      if (offenBuchungen.length === 0) {
+        offenList.innerHTML = '<li style="color:#888">Keine offenen Buchungen</li>';
       } else {
-        activeBuchungen.forEach(b => {
-          const li = createBuchungElement(b);
-          activeList.appendChild(li);
+        offenBuchungen.forEach(b => {
+          const li = createBuchungElement(b, 'offen');
+          offenList.appendChild(li);
         });
       }
 
-      // Erledigte und stornierte Buchungen
-      const completedList = document.getElementById('completed-buchungen-list');
-      completedList.innerHTML = '';
-      if (completedBuchungen.length === 0) {
-        completedList.innerHTML = '<li style="color:#888">Keine erledigten oder stornierten Buchungen</li>';
+      // Zurückgegebene Buchungen
+      const zurueckgegebenList = document.getElementById('buchungen-zurueckgegeben-list');
+      zurueckgegebenList.innerHTML = '';
+      if (zurueckgegebenBuchungen.length === 0) {
+        zurueckgegebenList.innerHTML = '<li style="color:#888">Keine zurückgegebenen Buchungen</li>';
       } else {
-        completedBuchungen.forEach(b => {
-          const li = createBuchungElement(b, true);
-          completedList.appendChild(li);
+        zurueckgegebenBuchungen.forEach(b => {
+          const li = createBuchungElement(b, 'zurueckgegeben');
+          zurueckgegebenList.appendChild(li);
+        });
+      }
+
+      // Abgeschlossene Buchungen
+      const abgeschlossenList = document.getElementById('buchungen-abgeschlossen-list');
+      abgeschlossenList.innerHTML = '';
+      if (abgeschlossenBuchungen.length === 0) {
+        abgeschlossenList.innerHTML = '<li style="color:#888">Keine abgeschlossenen Buchungen</li>';
+      } else {
+        abgeschlossenBuchungen.forEach(b => {
+          const li = createBuchungElement(b, 'abgeschlossen');
+          abgeschlossenList.appendChild(li);
         });
       }
     }
 
     // Hilfsfunktion zum Erstellen eines Buchungselements
-    function createBuchungElement(b, isCompleted = false) {
+    function createBuchungElement(b, status = 'offen') {
       const li = document.createElement('li');
       li.className = 'buchung';
       
@@ -649,8 +682,10 @@
       let statusBadge = '';
       if (b.status === 'storniert') {
         statusBadge = '<span class="status-badge status-storniert">Storniert</span>';
-      } else if (b.erledigt) {
-        statusBadge = '<span class="status-badge status-erledigt">Erledigt</span>';
+      } else if (b.status === 'zurueckgegeben') {
+        statusBadge = '<span class="status-badge status-zurueckgegeben">Zurückgegeben</span>';
+      } else if (b.status === 'abgeschlossen') {
+        statusBadge = '<span class="status-badge status-abgeschlossen">Abgeschlossen</span>';
       } else {
         statusBadge = '<span class="status-badge status-offen">Offen</span>';
       }
@@ -667,10 +702,13 @@
           ${artikelListe}
         </div>
         <div style="display: flex; gap: 0.5rem; margin-top: 0.3em;">
-          ${!b.erledigt && b.status !== 'storniert' ? `
+          ${status === 'offen' ? `
             <button onclick="deleteBuchung('${b.id}')" style="flex:1;background:#fff;color:var(--main-green);border:1px solid var(--main-green);font-size:0.95em;">Löschen</button>
             <button onclick="exportSinglePDF('${b.id}')" style="flex:1;background:var(--main-green);color:var(--main-white);font-size:0.95em;">PDF</button>
-            <button onclick="markAsErledigt('${b.id}')" style="flex:1;background:#4caf50;color:white;font-size:0.95em;">Erledigt</button>
+            <button onclick="markAsZurueckgegeben('${b.id}')" style="flex:1;background:#ff9800;color:white;font-size:0.95em;">Zurückgegeben</button>
+          ` : status === 'zurueckgegeben' ? `
+            <button onclick="exportSinglePDF('${b.id}')" style="flex:1;background:var(--main-green);color:var(--main-white);font-size:0.95em;">PDF</button>
+            <button onclick="markAsAbgeschlossen('${b.id}')" style="flex:1;background:#4caf50;color:white;font-size:0.95em;">Abgeschlossen</button>
           ` : `
             <button onclick="exportSinglePDF('${b.id}')" style="flex:1;background:var(--main-green);color:var(--main-white);font-size:0.95em;">PDF</button>
           `}
@@ -696,12 +734,23 @@
       }
     }
 
-    // Buchung als erledigt markieren
-    function markAsErledigt(id) {
+    // Buchung als zurückgegeben markieren
+    function markAsZurueckgegeben(id) {
       let buchungen = getBuchungen();
       const index = buchungen.findIndex(b => b.id === id);
       if (index !== -1) {
-        buchungen[index].erledigt = true;
+        buchungen[index].status = 'zurueckgegeben';
+        saveBuchungen(buchungen);
+        renderBuchungen();
+      }
+    }
+
+    // Buchung als abgeschlossen markieren
+    function markAsAbgeschlossen(id) {
+      let buchungen = getBuchungen();
+      const index = buchungen.findIndex(b => b.id === id);
+      if (index !== -1) {
+        buchungen[index].status = 'abgeschlossen';
         saveBuchungen(buchungen);
         renderBuchungen();
       }
@@ -766,7 +815,8 @@
         rueckgabetermin: formData.rueckgabetermin,
         abholtermin: formData.abholtermin,
         artikel: artikelMengen,
-        erledigt: false
+        erledigt: false,
+        status: 'offen' // Neuer Status
       };
 
       buchungen.push(neueBuchung);
